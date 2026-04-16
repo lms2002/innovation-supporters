@@ -11,20 +11,15 @@
            ========================================= */
         .page { 
             display: none; 
-            opacity: 0; /* 초기 상태: 투명 */
-            transform: translateY(10px); /* 초기 상태: 약간 아래 */
-            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; /* 부드러운 전환 효과 */
+            opacity: 0; 
+            transform: translateY(10px); 
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; 
         }
-        .page.active { 
-            display: block; /* flow의 일부가 되도록 설정 (하지만 여전히 투명 상태) */
-        }
-        .page.showing {
-            opacity: 1; /* 활성화 상태: 완전 불투명 */
-            transform: translateY(0); /* 활성화 상태: 원래 위치 */
-        }
+        .page.active { display: block; }
+        .page.showing { opacity: 1; transform: translateY(0); }
 
         /* =========================================
-           2. style.css 
+           2. 기본 디자인 스타일 
            ========================================= */
         :root { --bg: #f6f7f9; --card: #ffffff; --text: #111827; --muted: #4b5563; --border: #e5e7eb; --accent: #2563eb; --danger: #b91c1c; --focus: 2px solid rgba(37, 99, 235, 0.55); --radius: 16px; --tap: 56px; }
         * { box-sizing: border-box; }
@@ -63,14 +58,7 @@
         body[data-page="survey"] #prevBtn, body[data-page="survey"] #nextBtn { flex: 1; }
         .result-header { text-align: center; padding: 12px 0; }
         #resultTitle { font-size: 22px; color: var(--accent); margin-bottom: 6px; }
-        .result-description { 
-            font-size: 15px; 
-            line-height: 1.6; /* 가독성을 위해 줄간격 살짝 넓힘 */
-            color: var(--muted); 
-            word-break: keep-all; /* 한국어 단어가 중간에 잘리지 않게 보호 */
-            max-width: 75%; /* 양옆으로 너무 퍼지지 않게 너비 제한 */
-            margin: 16px auto 0; /* 마스코트 아래로 여백을 주고 가운데 정렬 */
-        }
+        .result-description { font-size: 15px; line-height: 1.6; color: var(--muted); word-break: keep-all; max-width: 75%; margin: 16px auto 0; }
         .section-title { font-size: 15px; font-weight: 900; margin: 0; color: var(--text); }
         .list li { background: var(--bg); border: 1px solid var(--border); margin-bottom: 10px; padding: 14px 16px; border-radius: 12px; font-weight: 700; }
         .result-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
@@ -83,12 +71,20 @@
         .progress-track { width: 100%; height: 10px; background: var(--border); border-radius: 999px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease-out; }
         .score-breakdown { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
-        .score-badge { background: var(--bg); border: 1px solid var(--border); padding: 8px 12px; border-radius: 999px; font-size: 14px; color: var(--muted); font-weight: 800; }
-        .score-badge.winner { background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.35); color: var(--accent); }
-
-        /* 마스코트 이미지 스타일 추가 */
         .mascot-box { width: 120px; height: 120px; margin: 10px auto; background: #eee; border-radius: 24px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
         .mascot-img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 🔥 클릭 가능한 배지 스타일 🔥 */
+        .score-badge { 
+            background: var(--bg); border: 1px solid var(--border); padding: 8px 12px; border-radius: 999px; font-size: 14px; color: var(--muted); font-weight: 800;
+            cursor: pointer; transition: all 0.2s ease; user-select: none;
+        }
+        .score-badge:hover { background: rgba(37, 99, 235, 0.05); transform: translateY(-2px); border-color: var(--accent); }
+        .score-badge.winner { background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.35); color: var(--accent); }
+        
+        /* 🔥 클릭 시 아래로 열리는 설명 박스 애니메이션 🔥 */
+        .type-detail-box { margin-top: 15px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--border); animation: slideDown 0.3s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body data-page="index">
@@ -179,10 +175,20 @@
                     </div>
                     <p id="resultDesc" class="result-description"></p>
                 </div>
+                
                 <div id="scoreBreakdown" class="score-breakdown"></div>
-                <div class="divider"></div>
+                <div class="divider" style="margin-top: 16px;"></div>
                 <h3 class="section-title">추천 프로그램</h3>
                 <ul id="resultPrograms" class="list"></ul>
+                
+                <a href="https://eclass.bc.ac.kr/program2" target="_blank" style="display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--accent); color: #fff; border-radius: 14px; padding: 14px 16px; font-size: 16px; font-weight: 800; text-decoration: none; margin-top: 8px;">
+                    비교과 프로그램 신청하러 가기
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                        <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4"></path>
+                        <path d="M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                </a>
+
                 <div class="info-box">
                     <p class="muted tiny">* 동점일 경우 최근 문항(Q7→Q1) 및 우선순위를 기준으로 결정되었습니다.</p>
                 </div>
@@ -201,7 +207,7 @@
             </header>
             <section class="card stack" aria-label="기록 목록">
                 <div class="row">
-                    <div class="muted small">최대 50개까지 저장</div>
+                    <div class="muted small">최근 설문의 기록을 조회 할 수 있습니다.</div>
                     <div class="actions">
                         <button type="button" id="logsHomeBtn" class="icon-btn" title="홈으로">
                             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -216,14 +222,29 @@
         </main>
     </div>
 
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
     <script>
     (function () {
         "use strict";
 
+        const firebaseConfig = {
+            apiKey: "AIzaSyDChA9w2OZ4puy2OLFhX2OoKGbVCaE2cyg",
+            authDomain: "innovation-supporters.firebaseapp.com",
+            projectId: "innovation-supporters",
+            storageBucket: "innovation-supporters.firebasestorage.app",
+            messagingSenderId: "122359021922",
+            appId: "1:122359021922:web:9fe622f26752b9b9bdec3b",
+            measurementId: "G-R84QYP8J83"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         const STORAGE_KEYS = { state: "mySurvey.state", lastResult: "mySurvey.lastResult", logs: "mySurvey.logs" };
         const TYPE_PRIORITY = ["job", "startup", "study", "life"];
 
-        // 수정할 부분: TYPES 객체 정의 부분
         const TYPES = {
             job: { 
                 label: "취업준비형", title: "당신은 취업준비형입니다", 
@@ -267,22 +288,16 @@
         function clearState() { localStorage.removeItem(STORAGE_KEYS.state); }
 
         function navigate(pageId) {
-            // 1. Instantly deactivate and hide *all* current pages (assuming only one is active)
             document.querySelectorAll('.page.active, .page.showing').forEach(el => {
                 el.classList.remove('active', 'showing'); 
-                el.style.display = 'none'; // Instant hide for fast response and avoiding overlay
+                el.style.display = 'none'; 
             });
 
             const newPage = document.getElementById('page-' + pageId);
             if (!newPage) return;
 
-            // 2. Prepare new page: show it transparently and for flow
             newPage.style.display = 'block';
-
-            // 3. Force reflow
             newPage.offsetHeight; 
-
-            // 4. Trigger fade in transition
             newPage.classList.add('active', 'showing'); 
 
             document.body.dataset.page = pageId;
@@ -365,12 +380,27 @@
                 }
             }
 
-            const result = { id: Date.now(), completedAt: new Date().toISOString(), winner, scores };
+            const completedTime = new Date().toISOString();
+            const result = { id: Date.now(), completedAt: completedTime, winner, scores };
+            
             writeJSON(STORAGE_KEYS.lastResult, result);
             const logs = readJSON(STORAGE_KEYS.logs, []);
             logs.unshift(result);
             writeJSON(STORAGE_KEYS.logs, logs.slice(0, 50));
             clearState();
+
+            db.collection("survey_results").add({
+                startedAt: state.startedAt,
+                completedAt: completedTime,
+                answers: state.answers,
+                winner: winner,
+                scores: scores
+            }).then(() => {
+                console.log("DB 저장 완료!");
+            }).catch((error) => {
+                console.error("DB 저장 실패:", error);
+            });
+
             navigate("result");
         }
 
@@ -383,7 +413,7 @@
 
             const t = TYPES[result.winner];
             $("resultTitle").textContent = t.title;
-            $("resultDesc").innerHTML = t.desc; // textContent를 innerHTML로 변경
+            $("resultDesc").innerHTML = t.desc;
 
             const imgEl = $("mascotImg");
             const placeholderEl = $("mascotPlaceholder");
@@ -400,14 +430,49 @@
             programs.innerHTML = "";
             t.programs.forEach(p => { const li = document.createElement("li"); li.textContent = p; programs.appendChild(li); });
 
+            // 🔥 점수 배지 생성 및 클릭 이벤트(아코디언) 처리 🔥
             const breakdown = $("scoreBreakdown");
             breakdown.innerHTML = "";
+            
+            // 기존 설명 박스가 있다면 지우고 새로 생성
+            let detailBox = $("typeDetailBox");
+            if (!detailBox) {
+                detailBox = document.createElement("div");
+                detailBox.id = "typeDetailBox";
+                detailBox.className = "type-detail-box hidden";
+            } else {
+                detailBox.classList.add("hidden"); // 페이지 처음 로드 시 숨김
+            }
+
             Object.entries(result.scores).sort((a,b) => b[1]-a[1]).forEach(([k, v]) => {
                 const badge = document.createElement("span");
                 badge.className = `score-badge ${k === result.winner ? 'winner' : ''}`;
                 badge.textContent = `${TYPES[k].label}: ${v}점`;
+                badge.title = "클릭해서 특징 보기"; // 마우스 올렸을 때 툴팁
+                
+                // 클릭 이벤트 연결
+                badge.onclick = () => {
+                    const typeInfo = TYPES[k];
+                    detailBox.innerHTML = `
+                        <div style="font-weight: 800; color: var(--accent); margin-bottom: 6px;">
+                            💡 ${typeInfo.label} 특징
+                        </div>
+                        <div class="small" style="line-height: 1.6; color: var(--text);">
+                            ${typeInfo.desc}
+                        </div>
+                    `;
+                    // 애니메이션을 위해 뺐다 넣기
+                    detailBox.classList.remove("hidden");
+                    detailBox.style.animation = 'none';
+                    detailBox.offsetHeight; /* trigger reflow */
+                    detailBox.style.animation = null; 
+                };
+                
                 breakdown.appendChild(badge);
             });
+            
+            // 배지들 바로 밑에 설명 박스 위치시키기
+            breakdown.after(detailBox);
         }
 
         function initLogsPage() {
