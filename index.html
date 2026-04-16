@@ -80,7 +80,7 @@
             cursor: pointer; transition: all 0.2s ease; user-select: none;
         }
         .score-badge:hover { background: rgba(37, 99, 235, 0.05); transform: translateY(-2px); border-color: var(--accent); }
-        .score-badge.winner { background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.35); color: var(--accent); }
+        .score-badge.active { background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.35); color: var(--accent); }
         
         /* 🔥 클릭 시 아래로 열리는 설명 박스 애니메이션 🔥 */
         .type-detail-box { margin-top: 15px; padding: 16px; background: #f8fafc; border-radius: 12px; border: 1px dashed var(--border); animation: slideDown 0.3s ease-out; }
@@ -430,28 +430,35 @@
             programs.innerHTML = "";
             t.programs.forEach(p => { const li = document.createElement("li"); li.textContent = p; programs.appendChild(li); });
 
-            // 🔥 점수 배지 생성 및 클릭 이벤트(아코디언) 처리 🔥
+            // 🔥 점수 배지 생성 및 클릭 이벤트 처리 🔥
             const breakdown = $("scoreBreakdown");
             breakdown.innerHTML = "";
             
-            // 기존 설명 박스가 있다면 지우고 새로 생성
             let detailBox = $("typeDetailBox");
             if (!detailBox) {
                 detailBox = document.createElement("div");
                 detailBox.id = "typeDetailBox";
                 detailBox.className = "type-detail-box hidden";
             } else {
-                detailBox.classList.add("hidden"); // 페이지 처음 로드 시 숨김
+                detailBox.classList.add("hidden");
             }
 
+            const badgeElements = [];
+
+            // 💡 점수 높은 순으로 나열하는 기존 정렬 코드는 그대로 유지!
             Object.entries(result.scores).sort((a,b) => b[1]-a[1]).forEach(([k, v]) => {
                 const badge = document.createElement("span");
-                badge.className = `score-badge ${k === result.winner ? 'winner' : ''}`;
+                badge.className = `score-badge`;
                 badge.textContent = `${TYPES[k].label}: ${v}점`;
-                badge.title = "클릭해서 특징 보기"; // 마우스 올렸을 때 툴팁
+                badge.title = "클릭해서 특징 보기"; 
                 
-                // 클릭 이벤트 연결
+                // 배지 클릭 시 하이라이트 이동 및 설명 업데이트
                 badge.onclick = () => {
+                    // 1. 모든 배지의 파란색(active)을 뺍니다.
+                    badgeElements.forEach(b => b.classList.remove('active'));
+                    // 2. 방금 클릭한 이 배지에만 파란색(active)을 줍니다.
+                    badge.classList.add('active');
+
                     const typeInfo = TYPES[k];
                     detailBox.innerHTML = `
                         <div style="font-weight: 800; color: var(--accent); margin-bottom: 6px;">
@@ -461,18 +468,22 @@
                             ${typeInfo.desc}
                         </div>
                     `;
-                    // 애니메이션을 위해 뺐다 넣기
                     detailBox.classList.remove("hidden");
                     detailBox.style.animation = 'none';
-                    detailBox.offsetHeight; /* trigger reflow */
+                    detailBox.offsetHeight; 
                     detailBox.style.animation = null; 
                 };
                 
+                badgeElements.push(badge);
                 breakdown.appendChild(badge);
             });
             
-            // 배지들 바로 밑에 설명 박스 위치시키기
             breakdown.after(detailBox);
+
+            // 화면에 들어왔을 때 맨 왼쪽(가장 높은 점수) 배지가 자동으로 눌려 있게 처리
+            if (badgeElements.length > 0) {
+                badgeElements[0].click();
+            }
         }
 
         function initLogsPage() {

@@ -158,6 +158,7 @@
         }
 
         function renderCharts(winnerData, q4Data) {
+            // 1. 도넛 차트
             new Chart(document.getElementById('typeChart'), {
                 type: 'doughnut',
                 data: {
@@ -165,12 +166,20 @@
                     datasets: [{
                         data: Object.values(winnerData),
                         backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'],
-                        hoverOffset: 15
+                        hoverOffset: 15,
+                        borderWidth: 2, // 차트 조각 사이에 얇은 여백을 줘서 깔끔하게
+                        borderColor: '#ffffff'
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '65%', // 너무 얇지도 두껍지도 않은 황금 비율
+                    plugins: { legend: { position: 'bottom' } } 
+                }
             });
 
+            // 2. 막대 차트 (디자인 대폭 업그레이드)
             new Chart(document.getElementById('q4Chart'), {
                 type: 'bar',
                 data: {
@@ -178,11 +187,32 @@
                     datasets: [{
                         label: '선택 인원',
                         data: Object.values(q4Data),
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderRadius: 8
+                        // 🔥 원형 차트와 똑같은 4가지 색상을 순서대로 적용!
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)', // 파랑 (취업)
+                            'rgba(245, 158, 11, 0.8)', // 노랑 (창업)
+                            'rgba(16, 185, 129, 0.8)', // 초록 (학습)
+                            'rgba(139, 92, 246, 0.8)'  // 보라 (생활)
+                        ],
+                        borderRadius: 8,
+                        maxBarThickness: 50 // 막대 굵기 제한
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }, plugins: { legend: { display: false } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            ticks: { stepSize: 1 },
+                            suggestedMax: 5 // 🔥 Y축 위쪽에 항상 여유 공간(헤드룸)을 남겨둠
+                        },
+                        x: {
+                            grid: { display: false } // 🔥 등 뒤의 지저분한 세로선 제거
+                        }
+                    }, 
+                    plugins: { legend: { display: false } } 
+                }
             });
         }
 
