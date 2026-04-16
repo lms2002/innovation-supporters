@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <title>비교과 프로그램 추천 서비스</title>
+    <style>
+        /* =========================================
+           1. SPA 페이지 전환용 CSS (애니메이션 추가)
+           ========================================= */
+        .page { 
+            display: none; 
+            opacity: 0; /* 초기 상태: 투명 */
+            transform: translateY(10px); /* 초기 상태: 약간 아래 */
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out; /* 부드러운 전환 효과 */
+        }
+        .page.active { 
+            display: block; /* flow의 일부가 되도록 설정 (하지만 여전히 투명 상태) */
+        }
+        .page.showing {
+            opacity: 1; /* 활성화 상태: 완전 불투명 */
+            transform: translateY(0); /* 활성화 상태: 원래 위치 */
+        }
+
+        /* =========================================
+           2. style.css 
+           ========================================= */
+        :root { --bg: #f6f7f9; --card: #ffffff; --text: #111827; --muted: #4b5563; --border: #e5e7eb; --accent: #2563eb; --danger: #b91c1c; --focus: 2px solid rgba(37, 99, 235, 0.55); --radius: 16px; --tap: 56px; }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: var(--text); background: var(--bg); }
+        body { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        a { color: inherit; text-decoration: none; }
+        .app { max-width: 960px; margin: 0 auto; padding: 22px 18px 44px; }
+        header { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 16px; }
+        h1 { font-size: 22px; line-height: 1.3; margin: 0; letter-spacing: -0.02em; }
+        .subtitle { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; }
+        .stack { display: flex; flex-direction: column; gap: 14px; }
+        .row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .muted { color: var(--muted); }
+        .error { color: var(--danger); font-size: 14px; font-weight: 700; margin: 0; }
+        .hidden { display: none !important; }
+        .divider { height: 1px; background: var(--border); margin: 6px 0; }
+        button { border: 1px solid var(--border); background: #fff; color: var(--text); border-radius: 14px; padding: 14px 16px; font-size: 16px; font-weight: 800; min-height: var(--tap); cursor: pointer; }
+        button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+        button.ghost { background: transparent; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        button:focus { outline: var(--focus); outline-offset: 2px; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .btn-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .optionBtn { text-align: left; border: 1px solid var(--border); background: #fff; padding: 16px; border-radius: 14px; line-height: 1.4; font-weight: 800; min-height: var(--tap); }
+        .optionBtn.selected { border-color: rgba(37, 99, 235, 0.6); box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.12) inset; }
+        .small { font-size: 14px; line-height: 1.5; }
+        .title2 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+        .list { margin: 10px 0 0; padding-left: 18px; color: var(--text); line-height: 1.6; }
+        @media (min-width: 720px) { h1 { font-size: 24px; } .btn-grid { grid-template-columns: 1fr; } body[data-page="survey"] #options { grid-template-columns: 1fr 1fr; } }
+        @media (min-width: 900px) { .app { padding-left: 20px; padding-right: 20px; } .btn-grid { grid-template-columns: 1fr 1fr; } }
+        body[data-page="index"] .btn-grid button { width: 100%; }
+        body[data-page="survey"] #options { display: grid; grid-template-columns: 1fr; gap: 12px; }
+        body[data-page="survey"] .actions { gap: 12px; }
+        body[data-page="survey"] #prevBtn, body[data-page="survey"] #nextBtn { flex: 1; }
+        .result-header { text-align: center; padding: 12px 0; }
+        #resultTitle { font-size: 22px; color: var(--accent); margin-bottom: 6px; }
+        .result-description { 
+            font-size: 15px; 
+            line-height: 1.6; /* 가독성을 위해 줄간격 살짝 넓힘 */
+            color: var(--muted); 
+            word-break: keep-all; /* 한국어 단어가 중간에 잘리지 않게 보호 */
+            max-width: 75%; /* 양옆으로 너무 퍼지지 않게 너비 제한 */
+            margin: 16px auto 0; /* 마스코트 아래로 여백을 주고 가운데 정렬 */
+        }
+        .section-title { font-size: 15px; font-weight: 900; margin: 0; color: var(--text); }
+        .list li { background: var(--bg); border: 1px solid var(--border); margin-bottom: 10px; padding: 14px 16px; border-radius: 12px; font-weight: 700; }
+        .result-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 18px; }
+        .secondary-btn { background: transparent; border: 1px solid rgba(37, 99, 235, 0.55); color: var(--accent); padding: 14px 16px; border-radius: 14px; font-weight: 900; min-height: var(--tap); }
+        .icon-btn { background: var(--bg); border: 1px solid var(--border); width: var(--tap); height: var(--tap); border-radius: 999px; display: flex; justify-content: center; align-items: center; color: var(--muted); cursor: pointer; }
+        .icon-btn:active { background: rgba(17, 24, 39, 0.04); }
+        .info-box { margin-top: 12px; padding: 12px; background: var(--bg); border-left: 3px solid var(--border); border-radius: 12px; }
+        .tiny { font-size: 13px; line-height: 1.4; }
+        .progress-wrapper { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+        .progress-track { width: 100%; height: 10px; background: var(--border); border-radius: 999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease-out; }
+        .score-breakdown { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
+        .score-badge { background: var(--bg); border: 1px solid var(--border); padding: 8px 12px; border-radius: 999px; font-size: 14px; color: var(--muted); font-weight: 800; }
+        .score-badge.winner { background: rgba(37, 99, 235, 0.10); border-color: rgba(37, 99, 235, 0.35); color: var(--accent); }
+
+        /* 마스코트 이미지 스타일 추가 */
+        .mascot-box { width: 120px; height: 120px; margin: 10px auto; background: #eee; border-radius: 24px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .mascot-img { width: 100%; height: 100%; object-fit: cover; }
+    </style>
+</head>
+<body data-page="index">
+
+    <div id="page-index" class="page active showing"> 
+        <main class="app">
+            <header style="text-align: center; padding: 40px 0 20px;">
+                <div style="font-size: 48px; margin-bottom: 16px;">🚀</div>
+                <h1 style="font-size: 26px; letter-spacing: -0.03em;">7개의 질문으로 찾아보는<br>나에게 맞는 비교과 프로그램</h1>
+                <p class="subtitle" style="margin-top: 12px; font-weight: 500;">내 성향과 목표에 찰떡인 캠퍼스 활동은 무엇일까?</p>
+            </header>
+            
+            <section class="card stack" aria-label="메인">
+                <div style="padding: 10px 0;">
+                    <h2 class="title2" style="text-align: center; font-size: 16px; color: var(--muted); font-weight: 500; line-height: 1.5;">
+                        "취업 준비? 창업? 아니면 자기계발?"<br>지금 나에게 가장 필요한 활동을 추천해 드려요!!
+                    </h2>
+                </div>
+                
+                <div class="divider"></div>
+                
+                <div class="btn-grid" style="margin-top: 10px;">
+                    <button type="button" id="startBtn" class="primary" style="font-size: 18px;">테스트 시작하기</button>
+                    <button type="button" id="indexLogsBtn" class="ghost">지난 결과 확인</button>
+                </div>
+                
+                <div style="margin-top: 8px;">
+                    <p class="muted small" style="text-align: left; opacity: 0.8;">
+                        • 총 7개의 문항으로 구성되어 있습니다.<br>
+                        • 보기를 누르면 자동으로 다음 단계로 넘어갑니다.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="page-survey" class="page">
+        <main class="app">
+            <header>
+                <h1>설문 진행</h1>
+            </header>
+            <section class="card stack" aria-label="설문">
+                <div class="row">
+                    <div class="progress-wrapper" style="flex: 1; margin-right: 16px;">
+                        <div class="muted small" id="progress" aria-label="진행률">진행 완료: 0 / 7</div>
+                        <div class="progress-track">
+                            <div id="progressBar" class="progress-fill"></div>
+                        </div>
+                    </div>
+                    <div class="actions">
+                        <button type="button" id="surveyHomeBtn" class="icon-btn" title="홈으로">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <p id="errorMsg" class="error hidden" role="alert"></p>
+                <h2 class="title2" id="qTitle">문항</h2>
+                <div id="options" class="stack" role="group" aria-label="선택지"></div>
+                <div class="divider"></div>
+                <div class="actions">
+                    <button type="button" id="prevBtn">이전</button>
+                    <button type="button" id="nextBtn" class="primary">다음</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="page-result" class="page">
+        <main class="app">
+            <header>
+                <h1>결과 분석</h1>
+            </header>
+            <section class="card stack" aria-label="결과 내용">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: -16px;">
+                    <button type="button" id="resultHomeBtn" class="icon-btn" title="홈으로">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                    </button>
+                </div>
+                <div class="result-header" style="padding-top: 0;">
+                    <h2 id="resultTitle" class="title2"></h2>
+                    <div class="mascot-box">
+                        <img id="mascotImg" src="" alt="마스코트 캐릭터" class="mascot-img hidden">
+                        <span id="mascotPlaceholder" class="muted small">이미지 준비 중</span>
+                    </div>
+                    <p id="resultDesc" class="result-description"></p>
+                </div>
+                <div id="scoreBreakdown" class="score-breakdown"></div>
+                <div class="divider"></div>
+                <h3 class="section-title">추천 프로그램</h3>
+                <ul id="resultPrograms" class="list"></ul>
+                <div class="info-box">
+                    <p class="muted tiny">* 동점일 경우 최근 문항(Q7→Q1) 및 우선순위를 기준으로 결정되었습니다.</p>
+                </div>
+                <div class="result-actions" style="justify-content: flex-end;">
+                    <button type="button" id="restartBtn" class="secondary-btn">다시하기</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="page-logs" class="page">
+        <main class="app">
+            <header>
+                <h1>저장된 기록</h1>
+                <p class="subtitle">설문 완료 시 결과가 자동 저장됩니다.</p>
+            </header>
+            <section class="card stack" aria-label="기록 목록">
+                <div class="row">
+                    <div class="muted small">최대 50개까지 저장</div>
+                    <div class="actions">
+                        <button type="button" id="logsHomeBtn" class="icon-btn" title="홈으로">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <p id="emptyMsg" class="muted hidden">저장된 기록이 없습니다.</p>
+                <div id="logList" class="stack"></div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+    (function () {
+        "use strict";
+
+        const STORAGE_KEYS = { state: "mySurvey.state", lastResult: "mySurvey.lastResult", logs: "mySurvey.logs" };
+        const TYPE_PRIORITY = ["job", "startup", "study", "life"];
+
+        // 수정할 부분: TYPES 객체 정의 부분
+        const TYPES = {
+            job: { 
+                label: "취업준비형", title: "당신은 취업준비형입니다", 
+                desc: "<strong>본격적인 커리어 빌드업</strong>이 필요한 시기입니다! 실무에서 요구하는 핵심 역량을 키우고, 다양한 현장 경험을 통해 <strong>성공적인 취업의 문</strong>을 두드려 보세요.", 
+                mascot: "", programs: ["취업역량 프로그램", "JOB4U 진로캠프", "직무역량 프로그램", "기업초청 채용설명회", "현장실습 지원"] 
+            },
+            startup: { 
+                label: "창업도전형", title: "당신은 창업도전형입니다", 
+                desc: "머릿속의 <strong>번뜩이는 아이디어를 현실로</strong> 만들어갈 시간입니다! 실패를 두려워하지 않는 도전 정신으로 <strong>나만의 비즈니스 모델</strong>을 스케치하고 구체화해 보세요.", 
+                mascot: "", programs: ["창업 특강 및 캠프", "창업 아이디어 경진대회", "창업동아리 운영", "창업 아이디어 전시회"] 
+            },
+            study: { 
+                label: "학습역량형", title: "당신은 학습역량형입니다", 
+                desc: "<strong>탄탄한 기본기와 끊임없는 자기계발</strong>이 무기인 유형입니다! 나에게 딱 맞는 효율적인 학습 전략을 찾고, <strong>전공 및 직무 전문성을 한 단계 레벨 업</strong>해 보세요.", 
+                mascot: "", programs: ["학습공동체(튜터링)", "MLST 학습전략 검사", "학습맞춤형 프로그램", "기초학습능력진단"] 
+            },
+            life: { 
+                label: "대학생활형", title: "당신은 대학생활형입니다", 
+                desc: "<strong>건강한 멘탈 관리와 캠퍼스 라이프의 밸런스</strong>가 가장 중요한 유형입니다! 내면의 소리에 귀 기울이며, <strong>슬기롭고 안정적인 대학 생활</strong>의 기반을 다져보세요.", 
+                mascot: "", programs: ["심리검사 프로그램", "마음 상담", "기초소양 및 인성프로그램"] 
+            }
+        };
+
+        const QUESTIONS = [
+            { id: 1, title: "지금 가장 고민되는 것은?", options: [{ type: "job", text: "취업 준비가 걱정됨" }, { type: "startup", text: "아이디어나 창업에 관심 있음" }, { type: "study", text: "공부나 자격증이 필요함" }, { type: "life", text: "학교생활 적응이 고민됨" }] },
+            { id: 2, title: "더 해보고 싶은 활동은?", options: [{ type: "job", text: "기업 체험이나 실무 경험" }, { type: "startup", text: "아이디어 기획이나 대회 참여" }, { type: "study", text: "공부나 자격증 준비" }, { type: "life", text: "상담이나 멘토링 참여" }] },
+            { id: 3, title: "내가 원하는 결과는?", options: [{ type: "job", text: "취업 성공" }, { type: "startup", text: "창업 또는 아이디어 실현" }, { type: "study", text: "성적 향상 또는 자격증 취득" }, { type: "life", text: "스트레스 해소 및 대학생활 적응" }] },
+            { id: 4, title: "선호하는 프로그램은?", options: [{ type: "job", text: "현장실습이나 취업 관련 프로그램" }, { type: "startup", text: "창업 및 아이디어 관련 프로그램" }, { type: "study", text: "학습, 외국어, 스터디 프로그램" }, { type: "life", text: "상담, 멘토링, 적응 프로그램" }] },
+            { id: 5, title: "나에게 더 필요한 것은?", options: [{ type: "job", text: "실무 경험" }, { type: "startup", text: "창의적인 아이디어" }, { type: "study", text: "공부 습관" }, { type: "life", text: "마음 관리" }] },
+            { id: 6, title: "시간을 쓴다면?", options: [{ type: "job", text: "취업 준비에 집중하고 싶다" }, { type: "startup", text: "새로운 도전 활동을 해보고 싶다" }, { type: "study", text: "꾸준한 자기계발을 하고 싶다" }, { type: "life", text: "부담 없이 참여하고 싶다" }] },
+            { id: 7, title: "나를 가장 잘 표현하는 말은?", options: [{ type: "job", text: "현실적이고 목표 지향적이다" }, { type: "startup", text: "아이디어가 많고 도전적이다" }, { type: "study", text: "꾸준하고 성실하다" }, { type: "life", text: "안정과 균형을 중요하게 생각한다" }] }
+        ];
+
+        function $(id) { return document.getElementById(id); }
+        function readJSON(key, fallback) { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
+        function writeJSON(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
+
+        function newState() { return { startedAt: new Date().toISOString(), currentIndex: 0, answers: Array.from({ length: QUESTIONS.length }, () => null) }; }
+        function loadState() { return readJSON(STORAGE_KEYS.state, null); }
+        function saveState(state) { writeJSON(STORAGE_KEYS.state, state); }
+        function clearState() { localStorage.removeItem(STORAGE_KEYS.state); }
+
+        function navigate(pageId) {
+            // 1. Instantly deactivate and hide *all* current pages (assuming only one is active)
+            document.querySelectorAll('.page.active, .page.showing').forEach(el => {
+                el.classList.remove('active', 'showing'); 
+                el.style.display = 'none'; // Instant hide for fast response and avoiding overlay
+            });
+
+            const newPage = document.getElementById('page-' + pageId);
+            if (!newPage) return;
+
+            // 2. Prepare new page: show it transparently and for flow
+            newPage.style.display = 'block';
+
+            // 3. Force reflow
+            newPage.offsetHeight; 
+
+            // 4. Trigger fade in transition
+            newPage.classList.add('active', 'showing'); 
+
+            document.body.dataset.page = pageId;
+            if (pageId === "index") initIndexPage();
+            if (pageId === "survey") initSurveyPage();
+            if (pageId === "result") initResultPage();
+            if (pageId === "logs") initLogsPage();
+            window.scrollTo(0, 0);
+        }
+
+        // --- Pages ---
+        function initIndexPage() {
+            $("startBtn").onclick = () => { saveState(newState()); navigate("survey"); };
+            $("indexLogsBtn").onclick = () => { navigate("logs"); };
+        }
+
+        let surveyState = null;
+        function initSurveyPage() {
+            surveyState = loadState() || newState();
+            saveState(surveyState);
+            
+            $("surveyHomeBtn").onclick = () => { navigate("index"); };
+            
+            function render() {
+                const idx = surveyState.currentIndex;
+                const q = QUESTIONS[idx];
+                
+                const answeredCount = surveyState.answers.filter(a => a !== null).length;
+                if ($("progress")) $("progress").textContent = `진행 완료: ${answeredCount} / ${QUESTIONS.length}`;
+                if ($("progressBar")) $("progressBar").style.width = `${(answeredCount / QUESTIONS.length) * 100}%`;
+                
+                if ($("qTitle")) $("qTitle").textContent = `Q${q.id}. ${q.title}`;
+
+                const optionsWrap = $("options");
+                optionsWrap.innerHTML = "";
+                for (const opt of q.options) {
+                    const btn = document.createElement("button");
+                    btn.type = "button"; btn.className = "optionBtn"; btn.textContent = opt.text;
+                    if (surveyState.answers[idx] === opt.type) btn.classList.add("selected");
+
+                    btn.onclick = () => {
+                        surveyState.answers[idx] = opt.type;
+                        saveState(surveyState);
+                        if (idx < QUESTIONS.length - 1) {
+                            surveyState.currentIndex = idx + 1;
+                            saveState(surveyState);
+                            render();
+                        } else {
+                            finishSurvey(surveyState);
+                        }
+                    };
+                    optionsWrap.appendChild(btn);
+                }
+                $("prevBtn").disabled = idx === 0;
+                $("nextBtn").disabled = !surveyState.answers[idx];
+            }
+
+            $("prevBtn").onclick = () => {
+                if (surveyState.currentIndex > 0) { surveyState.currentIndex -= 1; saveState(surveyState); render(); }
+            };
+            $("nextBtn").onclick = () => {
+                const idx = surveyState.currentIndex;
+                if (!surveyState.answers[idx]) return;
+                if (idx < QUESTIONS.length - 1) { surveyState.currentIndex = idx + 1; saveState(surveyState); render(); } 
+                else { finishSurvey(surveyState); }
+            };
+            render();
+        }
+
+        function finishSurvey(state) {
+            const scores = { job: 0, startup: 0, study: 0, life: 0 };
+            state.answers.forEach(t => { if(t) scores[t]++; });
+            
+            const maxScore = Math.max(...Object.values(scores));
+            const tied = TYPE_PRIORITY.filter(t => scores[t] === maxScore);
+            let winner = tied[0];
+            if (tied.length > 1) {
+                for (let i = state.answers.length - 1; i >= 0; i--) {
+                    if (tied.includes(state.answers[i])) { winner = state.answers[i]; break; }
+                }
+            }
+
+            const result = { id: Date.now(), completedAt: new Date().toISOString(), winner, scores };
+            writeJSON(STORAGE_KEYS.lastResult, result);
+            const logs = readJSON(STORAGE_KEYS.logs, []);
+            logs.unshift(result);
+            writeJSON(STORAGE_KEYS.logs, logs.slice(0, 50));
+            clearState();
+            navigate("result");
+        }
+
+        function initResultPage() {
+            $("resultHomeBtn").onclick = () => { navigate("index"); };
+            $("restartBtn").onclick = () => { saveState(newState()); navigate("survey"); };
+
+            const result = readJSON(STORAGE_KEYS.lastResult, null);
+            if (!result) return;
+
+            const t = TYPES[result.winner];
+            $("resultTitle").textContent = t.title;
+            $("resultDesc").innerHTML = t.desc; // textContent를 innerHTML로 변경
+
+            const imgEl = $("mascotImg");
+            const placeholderEl = $("mascotPlaceholder");
+            if (t.mascot) {
+                imgEl.src = t.mascot;
+                imgEl.classList.remove("hidden");
+                placeholderEl.classList.add("hidden");
+            } else {
+                imgEl.classList.add("hidden");
+                placeholderEl.classList.remove("hidden");
+            }
+
+            const programs = $("resultPrograms");
+            programs.innerHTML = "";
+            t.programs.forEach(p => { const li = document.createElement("li"); li.textContent = p; programs.appendChild(li); });
+
+            const breakdown = $("scoreBreakdown");
+            breakdown.innerHTML = "";
+            Object.entries(result.scores).sort((a,b) => b[1]-a[1]).forEach(([k, v]) => {
+                const badge = document.createElement("span");
+                badge.className = `score-badge ${k === result.winner ? 'winner' : ''}`;
+                badge.textContent = `${TYPES[k].label}: ${v}점`;
+                breakdown.appendChild(badge);
+            });
+        }
+
+        function initLogsPage() {
+            $("logsHomeBtn").onclick = () => { navigate("index"); };
+            const list = $("logList");
+            const data = readJSON(STORAGE_KEYS.logs, []);
+            list.innerHTML = data.length ? "" : "저장된 기록이 없습니다.";
+            data.forEach(item => {
+                const div = document.createElement("div"); div.className = "card row";
+                div.innerHTML = `<div><b>${TYPES[item.winner].label}</b><br><small>${item.completedAt.split('T')[0]}</small></div>`;
+                const btn = document.createElement("button"); btn.textContent = "보기"; btn.className = "primary";
+                btn.onclick = () => { writeJSON(STORAGE_KEYS.lastResult, item); navigate("result"); };
+                div.appendChild(btn); list.appendChild(div);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => navigate("index"));
+    })();
+    </script>
+</body>
+</html>
