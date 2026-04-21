@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>데이터 관리 페이지</title>
+    <style>
+        :root { --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --border: #e5e7eb; --accent: #2563eb; --danger: #ef4444; }
+        body { font-family: "Pretendard", "Apple SD Gothic Neo", sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; }
+        
+        /* 🔥 로그인 화면 스타일 🔥 */
+        #loginScreen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .login-card { background: var(--card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 340px; border: 1px solid var(--border); }
+        .login-card h2 { margin: 0 0 8px 0; color: var(--text); font-size: 22px; }
+        .login-card p { margin: 0 0 24px 0; color: #6b7280; font-size: 14px; }
+        .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; text-align: center; letter-spacing: 2px; transition: border-color 0.2s; }
+        .login-input:focus { border-color: var(--accent); }
+        .login-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+        .login-btn:hover { background: #1d4ed8; }
+
+        /* 관리자 본문 (기본 숨김) */
+        #dashboardContent { display: none; padding: 24px; }
+
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; }
+        .title-area h1 { margin: 0; font-size: 24px; display: flex; align-items: center; gap: 8px; }
+        .title-area p { margin: 4px 0 0; color: #6b7280; font-size: 14px; }
+        
+        .btn { padding: 10px 16px; border-radius: 8px; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; font-size: 14px; transition: background 0.2s; }
+        .btn-back { background: #fff; border: 1px solid var(--border); color: var(--text); }
+        .btn-back:hover { background: #f9fafb; }
+        .btn-delete { background: var(--danger); color: #fff; }
+        .btn-delete:hover:not(:disabled) { background: #dc2626; }
+        .btn-delete:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .filter-bar { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; display: flex; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .filter-group { display: flex; align-items: center; gap: 8px; }
+        .filter-group label { font-size: 14px; font-weight: 600; color: #4b5563; }
+        .filter-group select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); font-family: inherit; font-size: 14px; outline: none; }
+        .filter-group select:focus { border-color: var(--accent); }
+
+        .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 16px; border-bottom: 1px solid var(--border); }
+        th { background: #f9fafb; font-size: 14px; color: #6b7280; font-weight: 600; }
+        tr:hover { background: #fdfdfd; }
+        .checkbox { width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); }
+        
+        .badge { padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 700; display: inline-block; }
+        .badge-job { background: #dbeafe; color: #1e40af; }
+        .badge-startup { background: #fef3c7; color: #92400e; }
+        .badge-study { background: #dcfce7; color: #166534; }
+        .badge-life { background: #f3e8ff; color: #6b21a8; }
+
+        /* 🔥 수정완료: 페이지네이션 호버 시 흰색 안 보이게 수정! (.active 제외) 🔥 */
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; background: #fff; }
+        .page-btn { padding: 8px 12px; border: 1px solid var(--border); background: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: #4b5563; }
+        .page-btn:hover:not(:disabled):not(.active) { background: #f3f4f6; } /* .active 일 때는 회색 변환 방지 */
+        .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div id="loginScreen">
+        <div class="login-card">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--accent); margin-bottom: 12px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path>
+            </svg>
+            <h2>보안 인증</h2>
+            <p>데이터 관리 권한이 필요합니다.</p>
+            <input type="password" id="pwInput" class="login-input" placeholder="비밀번호" onkeypress="if(event.keyCode==13) login()">
+            <button class="login-btn" onclick="login()">접속하기</button>
+        </div>
+    </div>
+
+    <div id="dashboardContent">
+        <div class="container">
+            <div class="header">
+                <div class="title-area">
+                    <h1>
+                        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="color: var(--accent);">
+                            <path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"></path>
+                        </svg>
+                        데이터 관리
+                    </h1>
+                    <p>불필요한 설문 데이터를 선택하여 삭제하거나 기간별로 조회할 수 있습니다.</p>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-back" onclick="location.href='admin.html'">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                        대시보드로 돌아가기
+                    </button>
+                    <button class="btn btn-delete" id="deleteBtn" disabled onclick="deleteSelectedData()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        선택 삭제
+                    </button>
+                </div>
+            </div>
+
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label for="filterDate">기간</label>
+                    <select id="filterDate" onchange="applyFilters()">
+                        <option value="all">전체 기간</option>
+                        <option value="today">오늘</option>
+                        <option value="week">최근 7일</option>
+                        <option value="month">최근 30일</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="filterType">유형 결과</label>
+                    <select id="filterType" onchange="applyFilters()">
+                        <option value="all">모든 유형</option>
+                        <option value="job">취업준비형</option>
+                        <option value="startup">창업도전형</option>
+                        <option value="study">학습역량형</option>
+                        <option value="life">대학생활형</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;"><input type="checkbox" class="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+                            <th>응답 일시</th>
+                            <th>최종 유형</th>
+                            <th>상세 점수 (취/창/학/생)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTable">
+                        <tr><td colspan="4" style="text-align:center; padding: 40px;">데이터를 불러오는 중...</td></tr>
+                    </tbody>
+                </table>
+                <div id="pagination" class="pagination"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        // 🔑 원하는 비밀번호로 동일하게 맞춰주세요!
+        const ADMIN_PASSWORD = "3486"; 
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDChA9w2OZ4puy2OLFhX2OoKGbVCaE2cyg",
+            authDomain: "innovation-supporters.firebaseapp.com",
+            projectId: "innovation-supporters",
+            storageBucket: "innovation-supporters.firebasestorage.app",
+            messagingSenderId: "122359021922",
+            appId: "1:122359021922:web:9fe622f26752b9b9bdec3b",
+            measurementId: "G-R84QYP8J83"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const typeLabels = { job: "취업준비형", startup: "창업도전형", study: "학습역량형", life: "대학생활형" };
+
+        let allData = [];         
+        let filteredData = [];    
+        let currentPage = 1;      
+        const rowsPerPage = 10;   
+
+        // 🔥 수정완료: 선택한 데이터를 기억하는 전역 저장소 (Set) 🔥
+        let selectedIds = new Set(); 
+
+        // 🚀 로그인 관련 기능
+        function checkLogin() {
+            if (sessionStorage.getItem('adminAuth') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                loadData(); 
+            }
+        }
+
+        function login() {
+            if (document.getElementById('pwInput').value === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminAuth', 'true');
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                loadData(); 
+            } else {
+                alert("비밀번호가 일치하지 않습니다.");
+                document.getElementById('pwInput').value = '';
+                document.getElementById('pwInput').focus();
+            }
+        }
+
+        async function loadData() {
+            try {
+                const snapshot = await db.collection("survey_results").orderBy("completedAt", "desc").get();
+                allData = [];
+                snapshot.forEach(doc => allData.push({ id: doc.id, ...doc.data() }));
+                applyFilters(); 
+            } catch (e) {
+                document.getElementById("dataTable").innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger); padding:40px;">데이터 로드 실패</td></tr>';
+            }
+        }
+
+        function applyFilters() {
+            const dateFilter = document.getElementById("filterDate").value;
+            const typeFilter = document.getElementById("filterType").value;
+            const now = new Date();
+
+            filteredData = allData.filter(item => {
+                let matchType = (typeFilter === "all" || item.winner === typeFilter);
+                let matchDate = true;
+                if (dateFilter !== "all" && item.completedAt) {
+                    const diffDays = Math.ceil(Math.abs(now - new Date(item.completedAt)) / (1000 * 60 * 60 * 24));
+                    if (dateFilter === "today") matchDate = (diffDays <= 1);
+                    else if (dateFilter === "week") matchDate = (diffDays <= 7);
+                    else if (dateFilter === "month") matchDate = (diffDays <= 30);
+                }
+                return matchType && matchDate;
+            });
+
+            currentPage = 1; 
+            selectedIds.clear(); // 필터를 바꾸면 기억해둔 체크박스도 초기화
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById("dataTable");
+            tbody.innerHTML = "";
+            updateDeleteButton(); 
+
+            if (filteredData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding: 40px; color:#6b7280;">조건에 맞는 데이터가 없습니다.</td></tr>';
+                document.getElementById("selectAll").checked = false;
+                renderPagination();
+                return;
+            }
+
+            const start = (currentPage - 1) * rowsPerPage;
+            const end = start + rowsPerPage;
+            const paginatedData = filteredData.slice(start, end);
+            
+            let allCheckedOnThisPage = true;
+
+            paginatedData.forEach(data => {
+                const date = data.completedAt ? new Date(data.completedAt).toLocaleString() : "-";
+                const winner = data.winner || "unknown";
+                const s = data.scores || { job:0, startup:0, study:0, life:0 };
+
+                // 💡 기억장치(selectedIds)에 이 데이터 ID가 있으면 체크해둔다.
+                const isChecked = selectedIds.has(data.id);
+                if (!isChecked) allCheckedOnThisPage = false;
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td><input type="checkbox" class="checkbox row-checkbox" value="${data.id}" ${isChecked ? 'checked' : ''} onclick="toggleRow(this)"></td>
+                    <td style="font-size: 14px;">${date}</td>
+                    <td><span class="badge badge-${winner}">${typeLabels[winner] || winner}</span></td>
+                    <td style="color: #6b7280; font-size: 13px; font-family: monospace;">${s.job} / ${s.startup} / ${s.study} / ${s.life}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // 현재 화면의 체크박스가 모두 켜져있으면 전체 선택 체크박스도 ON
+            document.getElementById("selectAll").checked = paginatedData.length > 0 && allCheckedOnThisPage;
+            
+            renderPagination();
+        }
+
+        // 🔥 개별 체크박스 누를 때마다 기억장치(selectedIds)에 더하거나 빼기
+        function toggleRow(cb) {
+            if (cb.checked) selectedIds.add(cb.value);
+            else selectedIds.delete(cb.value);
+            
+            // 현재 페이지의 모든 체크박스가 눌렸는지 확인하여 헤더의 '전체선택' 체크 상태 변경
+            const allBoxes = document.querySelectorAll(".row-checkbox");
+            const checkedBoxes = document.querySelectorAll(".row-checkbox:checked");
+            document.getElementById("selectAll").checked = (allBoxes.length > 0 && allBoxes.length === checkedBoxes.length);
+            
+            updateDeleteButton();
+        }
+
+        // 🔥 '현재 페이지 전체 선택' 체크박스 기능
+        function toggleAll(master) {
+            const checkboxes = document.getElementsByClassName("row-checkbox");
+            for (let cb of checkboxes) { 
+                cb.checked = master.checked; 
+                if (master.checked) selectedIds.add(cb.value);
+                else selectedIds.delete(cb.value);
+            }
+            updateDeleteButton();
+        }
+
+        function updateDeleteButton() {
+            const checkedCount = selectedIds.size; // 체크된 개수를 메모리에서 가져옴
+            const btn = document.getElementById("deleteBtn");
+            btn.disabled = checkedCount === 0;
+            btn.innerHTML = checkedCount > 0 
+                ? `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> ${checkedCount}개 삭제` 
+                : `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg> 선택 삭제`;
+        }
+
+        function renderPagination() {
+            const paginationEl = document.getElementById("pagination");
+            paginationEl.innerHTML = "";
+            const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+            if (totalPages <= 1) return; 
+
+            const prevBtn = document.createElement("button");
+            prevBtn.className = "page-btn"; prevBtn.textContent = "◀";
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => { currentPage--; renderTable(); };
+            paginationEl.appendChild(prevBtn);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const btn = document.createElement("button");
+                btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.textContent = i;
+                btn.onclick = () => { currentPage = i; renderTable(); };
+                paginationEl.appendChild(btn);
+            }
+
+            const nextBtn = document.createElement("button");
+            nextBtn.className = "page-btn"; nextBtn.textContent = "▶";
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => { currentPage++; renderTable(); };
+            paginationEl.appendChild(nextBtn);
+        }
+
+        async function deleteSelectedData() {
+            const idsToDelete = Array.from(selectedIds);
+            if (idsToDelete.length === 0) return;
+            if (!confirm(`정말로 ${idsToDelete.length}개의 데이터를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+
+            const btn = document.getElementById("deleteBtn");
+            btn.disabled = true;
+            btn.textContent = "삭제 중...";
+
+            const batch = db.batch();
+            idsToDelete.forEach(id => {
+                const docRef = db.collection("survey_results").doc(id);
+                batch.delete(docRef);
+            });
+
+            try {
+                await batch.commit();
+                alert("성공적으로 삭제되었습니다.");
+                selectedIds.clear(); // 지우고 나면 기억장치도 비우기
+                loadData(); 
+            } catch (e) {
+                alert("삭제 중 오류가 발생했습니다.");
+                console.error(e);
+                updateDeleteButton();
+            }
+        }
+
+        window.onload = checkLogin;
+    </script>
+</body>
+</html>

@@ -8,7 +8,21 @@
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         :root { --bg: #f3f4f6; --card: #ffffff; --text: #1f2937; --border: #e5e7eb; --accent: #2563eb; }
-        body { font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; line-height: 1.5; }
+        body { font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.5; }
+        
+        /* 🔥 로그인 화면 스타일 추가 🔥 */
+        #loginScreen { position: fixed; inset: 0; background: var(--bg); display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+        .login-card { background: var(--card); padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); text-align: center; width: 100%; max-width: 340px; border: 1px solid var(--border); }
+        .login-card h2 { margin: 0 0 8px 0; color: var(--text); font-size: 22px; }
+        .login-card p { margin: 0 0 24px 0; color: #6b7280; font-size: 14px; }
+        .login-input { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; box-sizing: border-box; outline: none; text-align: center; letter-spacing: 2px; transition: border-color 0.2s; }
+        .login-input:focus { border-color: var(--accent); }
+        .login-btn { width: 100%; padding: 14px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 16px; transition: background 0.2s; }
+        .login-btn:hover { background: #1d4ed8; }
+
+        /* 대시보드 본문 (기본적으로 숨김 처리) */
+        #dashboardContent { display: none; padding: 24px; }
+
         .dashboard { max-width: 1100px; margin: 0 auto; }
         
         .header-container { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; border-bottom: 2px solid var(--border); padding-bottom: 16px; }
@@ -43,55 +57,73 @@
 </head>
 <body>
 
-    <div class="dashboard">
-        <div class="header-container">
-            <div class="header">
-                <div class="header-title">
-                    <svg class="icon" style="width:32px;height:32px;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    <h1>비교과 추천 서비스 통계</h1>
+    <div id="loginScreen">
+        <div class="login-card">
+            <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color: var(--accent); margin-bottom: 12px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z"></path>
+            </svg>
+            <h2>관리자 인증</h2>
+            <p>접근하려면 비밀번호를 입력하세요.</p>
+            <input type="password" id="pwInput" class="login-input" placeholder="비밀번호" onkeypress="if(event.keyCode==13) login()">
+            <button class="login-btn" onclick="login()">접속하기</button>
+        </div>
+    </div>
+
+    <div id="dashboardContent">
+        <div class="dashboard">
+            <div class="header-container">
+                <div class="header">
+                    <div class="header-title">
+                        <h1>비교과 추천 서비스 통계</h1>
+                    </div>
+                    <p>실시간 참여 데이터 분석 대시보드</p>
                 </div>
-                <p>실시간 참여 데이터 분석 대시보드</p>
-            </div>
-            <button class="btn-export" onclick="downloadRealExcel()">
-                <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                통합 데이터 추출(.xlsx)
-            </button>
-        </div>
-
-        <div class="summary-cards">
-            <div class="card">
-                <h3>
-                    <svg class="icon icon-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
-                    총 참여자 수
-                </h3>
-                <p class="number" id="totalUsers">0</p>
-            </div>
-            <div class="card">
-                <h3>
-                    <svg class="icon icon-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
-                    가장 많은 성향
-                </h3>
-                <p class="number" id="topType">-</p>
-            </div>
-        </div>
-
-        <div class="charts-grid">
-            <div class="chart-box">
-                <h3>
-                    <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
-                    최종 유형별 분포
-                </h3>
-                <div class="chart-container">
-                    <canvas id="typeChart"></canvas>
+                <div style="display: flex; gap: 10px;"> 
+                    <button class="btn-export" onclick="location.href='manage.html'" style="background: #6366f1;">
+                        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        데이터 관리
+                    </button>
+                    <button class="btn-export" onclick="downloadRealExcel()">
+                        통합 데이터 추출(.xlsx)
+                    </button>
                 </div>
             </div>
-            <div class="chart-box">
-                <h3>
-                    <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    프로그램 선호도 (Q4)
-                </h3>
-                <div class="chart-container">
-                    <canvas id="q4Chart"></canvas>
+
+            <div class="summary-cards">
+                <div class="card">
+                    <h3>
+                        <svg class="icon icon-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        총 참여자 수
+                    </h3>
+                    <p class="number" id="totalUsers">0</p>
+                </div>
+                <div class="card">
+                    <h3>
+                        <svg class="icon icon-gray" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>
+                        가장 많은 성향
+                    </h3>
+                    <p class="number" id="topType">-</p>
+                </div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <h3>
+                        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path></svg>
+                        최종 유형별 분포
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="typeChart"></canvas>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <h3>
+                        <svg class="icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                        프로그램 선호도 (Q4)
+                    </h3>
+                    <div class="chart-container">
+                        <canvas id="q4Chart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
@@ -101,6 +133,9 @@
     <script src="https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore-compat.js"></script>
 
     <script>
+        // 🔑 원하는 관리자 비밀번호를 여기에 설정하세요!
+        const ADMIN_PASSWORD = "3486"; 
+
         const firebaseConfig = {
             apiKey: "AIzaSyDChA9w2OZ4puy2OLFhX2OoKGbVCaE2cyg",
             authDomain: "innovation-supporters.firebaseapp.com",
@@ -131,6 +166,30 @@
         let globalSurveyData = [];
         let globalWinnerCounts = { job: 0, startup: 0, study: 0, life: 0 };
         let globalQ4Counts = { job: 0, startup: 0, study: 0, life: 0 };
+
+        // 🚀 로그인 확인 로직
+        function checkLogin() {
+            if (sessionStorage.getItem('adminAuth') === 'true') {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                initDashboard(); // 인증 완료 후 데이터 로드
+            }
+        }
+
+        // 🚀 로그인 버튼 클릭 시 실행
+        function login() {
+            const inputPw = document.getElementById('pwInput').value;
+            if (inputPw === ADMIN_PASSWORD) {
+                sessionStorage.setItem('adminAuth', 'true');
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'block';
+                initDashboard(); // 인증 성공 시에만 데이터 로드
+            } else {
+                alert("비밀번호가 일치하지 않습니다.");
+                document.getElementById('pwInput').value = '';
+                document.getElementById('pwInput').focus();
+            }
+        }
 
         async function initDashboard() {
             try {
@@ -167,19 +226,19 @@
                         data: Object.values(winnerData),
                         backgroundColor: ['#3b82f6', '#f59e0b', '#10b981', '#8b5cf6'],
                         hoverOffset: 15,
-                        borderWidth: 2, // 차트 조각 사이에 얇은 여백을 줘서 깔끔하게
+                        borderWidth: 2, 
                         borderColor: '#ffffff'
                     }]
                 },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false, 
-                    cutout: '65%', // 너무 얇지도 두껍지도 않은 황금 비율
+                    cutout: '65%',
                     plugins: { legend: { position: 'bottom' } } 
                 }
             });
 
-            // 2. 막대 차트 (디자인 대폭 업그레이드)
+            // 2. 막대 차트 
             new Chart(document.getElementById('q4Chart'), {
                 type: 'bar',
                 data: {
@@ -187,15 +246,14 @@
                     datasets: [{
                         label: '선택 인원',
                         data: Object.values(q4Data),
-                        // 🔥 원형 차트와 똑같은 4가지 색상을 순서대로 적용!
                         backgroundColor: [
-                            'rgba(59, 130, 246, 0.8)', // 파랑 (취업)
-                            'rgba(245, 158, 11, 0.8)', // 노랑 (창업)
-                            'rgba(16, 185, 129, 0.8)', // 초록 (학습)
-                            'rgba(139, 92, 246, 0.8)'  // 보라 (생활)
+                            'rgba(59, 130, 246, 0.8)', 
+                            'rgba(245, 158, 11, 0.8)', 
+                            'rgba(16, 185, 129, 0.8)', 
+                            'rgba(139, 92, 246, 0.8)'  
                         ],
                         borderRadius: 8,
-                        maxBarThickness: 50 // 막대 굵기 제한
+                        maxBarThickness: 50 
                     }]
                 },
                 options: { 
@@ -205,10 +263,10 @@
                         y: { 
                             beginAtZero: true, 
                             ticks: { stepSize: 1 },
-                            suggestedMax: 5 // 🔥 Y축 위쪽에 항상 여유 공간(헤드룸)을 남겨둠
+                            suggestedMax: 5 
                         },
                         x: {
-                            grid: { display: false } // 🔥 등 뒤의 지저분한 세로선 제거
+                            grid: { display: false } 
                         }
                     }, 
                     plugins: { legend: { display: false } } 
@@ -216,22 +274,19 @@
             });
         }
 
-        // 🚀 SheetJS를 활용한 진짜 엑셀(.xlsx) 파일 생성 및 다운로드
         function downloadRealExcel() {
             if (globalSurveyData.length === 0) {
                 alert("추출할 데이터가 없습니다.");
                 return;
             }
 
-            // 1. 엑셀에 들어갈 2차원 배열 데이터(행과 열) 만들기
             let ws_data = [];
 
-            // 요약 통계 삽입
             ws_data.push(["[ 대시보드 요약 통계 ]"]);
             ws_data.push(["추출 일시", new Date().toLocaleString('ko-KR')]);
             ws_data.push(["총 참여자 수", globalSurveyData.length + "명"]);
             ws_data.push(["가장 많은 성향", document.getElementById("topType").textContent]);
-            ws_data.push([]); // 빈 줄
+            ws_data.push([]); 
 
             ws_data.push(["[ 최종 유형별 분포 ]"]);
             for (const [key, val] of Object.entries(globalWinnerCounts)) {
@@ -246,12 +301,10 @@
             ws_data.push([]);
             ws_data.push([]);
 
-            // 상세 데이터 헤더 삽입
             ws_data.push(["[ 상세 응답 로그 ]"]);
             const headers = ["응답일시", "최종결과", "취업점수", "창업점수", "학습점수", "생활점수", "Q1_고민", "Q2_희망활동", "Q3_목표", "Q4_선호프로그램", "Q5_필요역량", "Q6_시간투자", "Q7_자기표현"];
             ws_data.push(headers);
 
-            // 상세 데이터 내용 삽입
             globalSurveyData.forEach(data => {
                 const date = data.completedAt ? new Date(data.completedAt).toLocaleString('ko-KR') : "";
                 const winner = typeLabels[data.winner] || "-";
@@ -275,35 +328,20 @@
                 ]);
             });
 
-            // 2. 워크시트 생성
             const ws = XLSX.utils.aoa_to_sheet(ws_data);
 
-            // 🌟 3. 셀 너비 자동 맞춤 설정 (wch: 글자 수 기준)
             ws['!cols'] = [
-                { wch: 25 }, // A열 (응답일시/제목 등)
-                { wch: 15 }, // B열 (최종결과/값)
-                { wch: 10 }, // C열 (취업점수)
-                { wch: 10 }, // D열 (창업점수)
-                { wch: 10 }, // E열 (학습점수)
-                { wch: 10 }, // F열 (생활점수)
-                { wch: 25 }, // G열 (Q1)
-                { wch: 25 }, // H열 (Q2)
-                { wch: 25 }, // I열 (Q3)
-                { wch: 25 }, // J열 (Q4)
-                { wch: 25 }, // K열 (Q5)
-                { wch: 25 }, // L열 (Q6)
-                { wch: 25 }  // M열 (Q7)
+                { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 },
+                { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }, { wch: 25 }
             ];
 
-            // 4. 워크북(엑셀 파일) 생성 후 시트 붙이기
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "설문 통계");
-
-            // 5. 진짜 .xlsx 파일로 다운로드 실행
             XLSX.writeFile(wb, `비교과_통계리포트_${Date.now()}.xlsx`);
         }
 
-        window.onload = initDashboard;
+        // 🚀 페이지 로드 시 로그인 상태를 먼저 확인합니다.
+        window.onload = checkLogin;
     </script>
 </body>
 </html>
