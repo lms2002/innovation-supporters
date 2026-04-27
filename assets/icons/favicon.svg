@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="비교과 추천 서비스 아이콘">
+  <!--
+    Simple, bold favicon that stays legible at 16–32px.
+    Theme colors match the site's accent (#2563eb).
+  -->
+  <rect x="32" y="32" width="448" height="448" rx="128" fill="#2563eb"/>
+
+  <!-- check mark -->
+  <path d="M160 270 L230 340 L364 188" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- small sparkle (optional detail, still readable) -->
+  <path d="M362 314
+           C386 302, 400 284, 406 258
+           C412 284, 426 302, 450 314
+           C426 326, 412 344, 406 370
+           C400 344, 386 326, 362 314Z" fill="#ffffff" opacity="0.9"/>
+</svg>

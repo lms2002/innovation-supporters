@@ -4,6 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="color-scheme" content="light" />
+    <link rel="icon" href="assets/icons/favicon.svg?v=2" type="image/svg+xml" />
     <title>비교과 프로그램 추천 서비스</title>
     <style>
         /* =========================================
@@ -23,7 +24,7 @@
            ========================================= */
         :root { --bg: #f6f7f9; --card: #ffffff; --text: #111827; --muted: #4b5563; --border: #e5e7eb; --accent: #2563eb; --danger: #b91c1c; --focus: 2px solid rgba(37, 99, 235, 0.55); --radius: 16px; --tap: 56px; }
         * { box-sizing: border-box; }
-        html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: var(--text); background: var(--bg); }
+        html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color: var(--text); background: var(--bg); touch-action: manipulation; }
         body { animation: fadeIn 0.3s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         a { color: inherit; text-decoration: none; }
@@ -52,6 +53,17 @@
         .list { margin: 10px 0 0; padding-left: 18px; color: var(--text); line-height: 1.6; }
         @media (min-width: 720px) { h1 { font-size: 24px; } .btn-grid { grid-template-columns: 1fr; } body[data-page="survey"] #options { grid-template-columns: 1fr 1fr; } }
         @media (min-width: 900px) { .app { padding-left: 20px; padding-right: 20px; } .btn-grid { grid-template-columns: 1fr 1fr; } }
+
+        /* 태블릿에서 결과 화면 글씨가 작아 보이는 문제 보정 */
+        @media (min-width: 720px) and (max-width: 1024px) {
+            body[data-page="result"] h1 { font-size: 28px; }
+            body[data-page="result"] #resultTitle { font-size: 32px; }
+            body[data-page="result"] .result-description { font-size: 18px; max-width: 90%; }
+            body[data-page="result"] .section-title { font-size: 18px; }
+            body[data-page="result"] .list li { font-size: 18px; }
+            body[data-page="result"] .score-badge { font-size: 16px; }
+            body[data-page="result"] .small { font-size: 16px; }
+        }
         body[data-page="index"] .btn-grid button { width: 100%; }
         body[data-page="survey"] #options { display: grid; grid-template-columns: 1fr; gap: 12px; }
         body[data-page="survey"] .actions { gap: 12px; }
@@ -71,8 +83,8 @@
         .progress-track { width: 100%; height: 10px; background: var(--border); border-radius: 999px; overflow: hidden; }
         .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease-out; }
         .score-breakdown { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; justify-content: center; }
-        .mascot-box { width: 120px; height: 120px; margin: 10px auto; background: #eee; border-radius: 24px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-        .mascot-img { width: 100%; height: 100%; object-fit: cover; }
+        .mascot-box { width: 300px; height: 300px; margin: 10px auto; background: #fff; border-radius: 24px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .mascot-img { width: 100%; height: 100%; object-fit: contain; }
 
         /* 🔥 클릭 가능한 배지 스타일 🔥 */
         .score-badge { 
@@ -229,6 +241,19 @@
     (function () {
         "use strict";
 
+        // 모바일/태블릿에서 빠르게 탭할 때 발생하는 더블탭 줌(확대) 방지
+        // (특히 iOS Safari에서 효과적)
+        let _lastTouchEnd = 0;
+        document.addEventListener(
+            "touchend",
+            (e) => {
+                const now = Date.now();
+                if (now - _lastTouchEnd <= 300) e.preventDefault();
+                _lastTouchEnd = now;
+            },
+            { passive: false }
+        );
+
         const firebaseConfig = {
             apiKey: "AIzaSyDChA9w2OZ4puy2OLFhX2OoKGbVCaE2cyg",
             authDomain: "innovation-supporters.firebaseapp.com",
@@ -249,22 +274,22 @@
             job: { 
                 label: "취업준비형", title: "당신은 취업준비형입니다", 
                 desc: "<strong>본격적인 커리어 빌드업</strong>이 필요한 시기입니다! 실무에서 요구하는 핵심 역량을 키우고, 다양한 현장 경험을 통해 <strong>성공적인 취업의 문</strong>을 두드려 보세요.", 
-                mascot: "", programs: ["취업역량 프로그램", "JOB4U 진로캠프", "직무역량 프로그램", "기업초청 채용설명회", "현장실습 지원"] 
+                mascot: "assets/mascots/job.png", programs: ["취업역량 프로그램", "JOB4U 진로캠프", "직무역량 프로그램", "기업초청 채용설명회", "현장실습 지원"] 
             },
             startup: { 
                 label: "창업도전형", title: "당신은 창업도전형입니다", 
                 desc: "머릿속의 <strong>번뜩이는 아이디어를 현실로</strong> 만들어갈 시간입니다! 실패를 두려워하지 않는 도전 정신으로 <strong>나만의 비즈니스 모델</strong>을 스케치하고 구체화해 보세요.", 
-                mascot: "", programs: ["창업 특강 및 캠프", "창업 아이디어 경진대회", "창업동아리 운영", "창업 아이디어 전시회"] 
+                mascot: "assets/mascots/startup.png", programs: ["창업 특강 및 캠프", "창업 아이디어 경진대회", "창업동아리 운영", "창업 아이디어 전시회"] 
             },
             study: { 
                 label: "학습역량형", title: "당신은 학습역량형입니다", 
                 desc: "<strong>탄탄한 기본기와 끊임없는 자기계발</strong>이 무기인 유형입니다! 나에게 딱 맞는 효율적인 학습 전략을 찾고, <strong>전공 및 직무 전문성을 한 단계 레벨 업</strong>해 보세요.", 
-                mascot: "", programs: ["학습공동체(튜터링)", "MLST 학습전략 검사", "학습맞춤형 프로그램", "기초학습능력진단"] 
+                mascot: "assets/mascots/study.png", programs: ["학습공동체(튜터링)", "MLST 학습전략 검사", "학습맞춤형 프로그램", "기초학습능력진단"] 
             },
             life: { 
                 label: "대학생활형", title: "당신은 대학생활형입니다", 
                 desc: "<strong>건강한 멘탈 관리와 캠퍼스 라이프의 밸런스</strong>가 가장 중요한 유형입니다! 내면의 소리에 귀 기울이며, <strong>슬기롭고 안정적인 대학 생활</strong>의 기반을 다져보세요.", 
-                mascot: "", programs: ["심리검사 프로그램", "마음 상담", "기초소양 및 인성프로그램"] 
+                mascot: "assets/mascots/life.png", programs: ["심리검사 프로그램", "마음 상담", "기초소양 및 인성프로그램"] 
             }
         };
 
