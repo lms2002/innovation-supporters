@@ -54,7 +54,17 @@
         .badge-life { background: #f3e8ff; color: #6b21a8; }
 
         /* 🔥 수정완료: 페이지네이션 호버 시 흰색 안 보이게 수정! (.active 제외) 🔥 */
-        .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px; background: #fff; }
+        .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    padding: 20px;
+    background: #fff;
+
+    flex-wrap: wrap;
+    max-width: 100%;
+}
         .page-btn { padding: 8px 12px; border: 1px solid var(--border); background: #fff; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; color: #4b5563; }
         .page-btn:hover:not(:disabled):not(.active) { background: #f3f4f6; } /* .active 일 때는 회색 변환 방지 */
         .page-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
